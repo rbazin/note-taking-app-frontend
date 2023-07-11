@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="is-flex is-flex-direction-horizontal pt-2">
-            <font-awesome-icon class="is-size-4" :icon="icon" color="#52b69a" />
-            <router-link v-if="folder.type == 'file'" to="/note" class="px-2">{{folder.name}}</router-link>
+            <font-awesome-icon class="is-size-4" :icon="this.folder.type === 'folder' ? 'fa-solid fa-folder' : 'fa-solid fa-file-pen'" color="#52b69a" />
+            <a v-if="folder.type == 'file'" class="px-2" @click="notes_store.selectNote(folder)">{{ folder.name }}</a>
             <div v-else class="px-2">{{folder.name}}</div>
         </div>
         <div class="pl-5">
@@ -12,12 +12,13 @@
 </template>
 
 <script>
+import { noteStore } from '@/stores/noteStore'
+
 export default {
     name: 'ItemComponent',
-    data() {
-        return {
-            icon: this.folder.type === 'folder' ? 'fa-solid fa-folder' : 'fa-solid fa-file-pen'
-        }
+    setup() {
+        const notes_store = noteStore()
+        return { notes_store }
     },
     props: {
         folder: {

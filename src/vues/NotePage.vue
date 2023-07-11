@@ -1,3 +1,5 @@
+<!-- UNUSED for now, could be used to put a not in fullscreen -->
+
 <template>
     <div class="section pt-6">
         <div class="container">

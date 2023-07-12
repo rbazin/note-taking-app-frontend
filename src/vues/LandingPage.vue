@@ -1,6 +1,8 @@
 <template>
     <div class="landing-container pt-6">
         <h1 class="title is-1 has-text-centered">Voice commands note taking app</h1>
+
+        <!-- Notes -->
         <section class="section columns">
             <div class="container column is-one-third is-flex is-flex-direction-horizontal is-justify-content-center">
                 <div id="box" class="box has-text-centered px-6">
@@ -18,6 +20,21 @@
                     <p v-if="!notes_store.noteSelected">No note selected</p>
                     <p v-else class="has-text-left">{{ notes_store.noteSelected.text }}</p>
                 </div>
+            </div>
+        </section>
+
+        <!-- Voice recording button -->
+        <section class="section is-flex is-flex-direction-horizontal is-justify-content-center is-align-items-center">
+            <div class="container has-text-centered">
+                <span @click="toggleRecording" class="icon-text" :class="recordingColor" style="cursor: pointer;">
+                    <span class="icon is-size-1" :class="recordingColor">
+                        <!-- <i class="fa-solid fa-microphone"></i> -->
+                        <font-awesome-icon :icon="'fa-solid fa-microphone'"/>
+                    </span>
+                    <span>
+                        {{ recordingText }}
+                    </span>
+                </span>
             </div>
         </section>
     </div>
@@ -39,6 +56,30 @@ export default {
     mounted() {
         this.notes_store.loadAllNotes()
     },
+    data() {
+        return {
+            recording: false
+        }
+    },
+    methods: {
+        toggleRecording() {
+            if (this.recording) {
+                console.log("Stop recording")
+            }
+            else {
+                console.log("Start recording")
+            }
+            this.recording = !this.recording
+        },
+    },
+    computed: {
+        recordingText() {
+            return this.recording ?  "Click to stop recording": "Click to start recording"
+        },
+        recordingColor() {
+            return this.recording ?  "has-text-danger" : "has-text-white" 
+        }
+    }
 }
 </script>
 

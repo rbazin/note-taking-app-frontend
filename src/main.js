@@ -10,10 +10,10 @@ require('@/assets/main.scss');
 
 // Import fontawesome
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faFolder, faFilePen } from '@fortawesome/free-solid-svg-icons'
+import { faFolder, faFilePen, faMicrophone } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-library.add(faFolder, faFilePen)
+library.add(faFolder, faFilePen, faMicrophone)
 
 
 createApp(App)

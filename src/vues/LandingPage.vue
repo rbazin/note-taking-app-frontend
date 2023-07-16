@@ -46,7 +46,10 @@
 <script>
 import ItemComponent from '@/components/ItemComponent.vue'
 import { noteStore } from '@/stores/noteStore'
-import { RecordRTCPromisesHandler, invokeSaveAsDialog, StereoAudioRecorder } from 'recordrtc';
+import { RecordRTCPromisesHandler, StereoAudioRecorder } from 'recordrtc'
+// import { invokeSaveAsDialog } from 'recordrtc'
+
+import axios from 'axios'
 
 export default {
     name: 'LandingPage',
@@ -71,8 +74,21 @@ export default {
             if (this.recording) {
                 console.log("Stop recording")
                 await this.recorder.stopRecording();
-                let blob = await this.recorder.getBlob();
-                invokeSaveAsDialog(blob, 'audio.wav');
+                // let blob = await this.recorder.getBlob();
+                // invokeSaveAsDialog(blob, 'audio.wav');
+                let audio_b64 = await this.recorder.getDataURL();
+                console.log(audio_b64);
+
+                // Send audio to backend
+                let response = await axios.post(process.env.BACKEND_API_URL + '/trasnscribe', {
+                    audio: audio_b64
+                })
+
+                // Change notes with answer
+                console.log(response.status)
+                console.log(response.notes)
+
+                // Delete recorder
                 this.recorder.destroy();
                 this.recorder = null;
             }

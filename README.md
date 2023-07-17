@@ -1,4 +1,4 @@
-# note-taking-app
+# Note taking app frontend
 
 ## Project setup
 ```

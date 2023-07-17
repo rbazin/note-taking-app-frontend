@@ -77,16 +77,25 @@ export default {
                 // let blob = await this.recorder.getBlob();
                 // invokeSaveAsDialog(blob, 'audio.wav');
                 let audio_b64 = await this.recorder.getDataURL();
-                console.log(audio_b64);
+                console.log(typeof audio_b64);
 
-                // Send audio to backend
-                let response = await axios.post(process.env.BACKEND_API_URL + '/trasnscribe', {
-                    audio: audio_b64
-                })
-
-                // Change notes with answer
-                console.log(response.status)
-                console.log(response.notes)
+                // Send audio to backend and wait for updated notes
+                console.log(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`)
+                axios.post(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`, 
+                {
+                    audio_b64: audio_b64
+                },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                ).then((response) => {
+                    // update notes
+                    console.log(response)
+                }).catch((error) => {
+                    console.log(error);
+                });
 
                 // Delete recorder
                 this.recorder.destroy();

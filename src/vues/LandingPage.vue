@@ -45,6 +45,13 @@
         </section>
         <!-- TODO : add an alert when the answer is note tree is updated -->
         <!-- TODO : disable button while previous request is being processed -->
+        <div class="modal" :class="{ 'is-active is-clipped': isModalActivated }">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <p>Please wait for the processing to finish before recording something else</p>
+            </div>
+            <button @click="isModalActivated = !isModalActivated" class="modal-close is-large" aria-label="close"></button>
+        </div>
     </div>
 </template>
 
@@ -73,7 +80,8 @@ export default {
             recorder: null,
             timer: false,
             time: 0,
-            answer_received : false,
+            answer_received: false,
+            isModalActivated: false,
         }
     },
     methods: {
@@ -132,16 +140,22 @@ export default {
                 }
             }
             else {
-                console.log("Start recording")
-                let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                this.recorder = new RecordRTCPromisesHandler(stream, {
-                    type: 'audio',
-                    mimeType: 'audio/wav',
-                    recorderType: StereoAudioRecorder,
-                    desiredSampRate: 16000,
-                    numberOfAudioChannels: 1,
-                });
-                this.recorder.startRecording();
+                if (!this.answer_received && this.timer && !this.isModalActivated) {
+                    this.isModalActivated = true;
+                    return;
+                } else {
+                    console.log("Start recording")
+                    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.recorder = new RecordRTCPromisesHandler(stream, {
+                        type: 'audio',
+                        mimeType: 'audio/wav',
+                        recorderType: StereoAudioRecorder,
+                        desiredSampRate: 16000,
+                        numberOfAudioChannels: 1,
+                    });
+                    this.recorder.startRecording();
+                }
+
             }
             this.recording = !this.recording;
         },

@@ -4,6 +4,7 @@
 
         <!-- Notes -->
         <section class="section columns">
+            <!-- List of notes -->
             <div class="container column is-one-third is-flex is-flex-direction-horizontal is-justify-content-center">
                 <div id="box" class="box has-text-centered px-6">
                     <h2 class="title is-2">Notes</h2>
@@ -13,6 +14,7 @@
                     </div>
                 </div>
             </div>
+            <!-- Note selected -->
             <div class="container is-two-third column">
                 <div id="box" class="box has-text-centered px-6">
                     <h2 v-if="!notes_store.noteSelected" class="title is-2">Note</h2>
@@ -25,7 +27,7 @@
 
         <!-- Voice recording button -->
         <section class="section is-flex is-flex-direction-horizontal is-justify-content-center is-align-items-center">
-            <div class="container has-text-centered">
+            <div class="container pr-3" :class="{ 'has-text-right': timer, 'has-text-centered': !timer }">
                 <div class="button is-rounded is-primary">
                     <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor"
                         style="cursor: pointer;">
@@ -39,7 +41,10 @@
                     </span>
                 </div>
             </div>
+            <p v-if="timer" class="container is-size-5 has-text-left" style="color: aliceblue;">{{ formatElapsedTime }}</p>
         </section>
+        <!-- TODO : add an alert when the answer is note tree is updated -->
+        <!-- TODO : disable button while previous request is being processed -->
     </div>
 </template>
 
@@ -47,7 +52,6 @@
 import ItemComponent from '@/components/ItemComponent.vue'
 import { noteStore } from '@/stores/noteStore'
 import { RecordRTCPromisesHandler, StereoAudioRecorder } from 'recordrtc'
-// import { invokeSaveAsDialog } from 'recordrtc'
 
 import axios from 'axios'
 
@@ -67,39 +71,65 @@ export default {
         return {
             recording: false,
             recorder: null,
+            timer: false,
+            time: 0,
+            answer_received : false,
         }
     },
     methods: {
+        toggleTimer() {
+            console.log("Timer toggled")
+            this.timer = !this.timer;
+            if (this.timer) {
+                this.elapsedTime();
+            } else {
+                this.timer = false;
+                this.time = 0;
+            }
+        },
+        elapsedTime() {
+            this.time += 0.1; // 100 ms
+            if (this.timer) {
+                setTimeout(() => {
+                    this.elapsedTime();
+                }, 100)
+            }
+        },
         async toggleRecording() {
             if (this.recording) {
                 console.log("Stop recording")
                 await this.recorder.stopRecording();
-                // let blob = await this.recorder.getBlob();
-                // invokeSaveAsDialog(blob, 'audio.wav');
                 let audio_b64 = await this.recorder.getDataURL();
-                console.log(typeof audio_b64);
 
-                // Send audio to backend and wait for updated notes
-                console.log(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`)
-                axios.post(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`, 
-                {
-                    audio_b64: audio_b64
-                },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
+                this.answer_received = false;
+                this.toggleTimer();
+                try {
+                    let response = await axios.post(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`,
+                        {
+                            notes: this.notes_store.allNotes,
+                            audio_b64: audio_b64,
+                        },
+                        {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
                         }
-                    }
-                ).then((response) => {
+                    );
                     // update notes
-                    console.log(response)
-                }).catch((error) => {
+                    console.log(response);
+                    this.notes_store.allNotes = response.data.new_notes;
+
+                } catch (error) {
                     console.log(error);
-                });
+                }
+                this.toggleTimer();
+                this.answer_received = true;
 
                 // Delete recorder
-                this.recorder.destroy();
-                this.recorder = null;
+                if (this.recorder) {
+                    this.recorder.destroy();
+                    this.recorder = null;
+                }
             }
             else {
                 console.log("Start recording")
@@ -113,7 +143,7 @@ export default {
                 });
                 this.recorder.startRecording();
             }
-            this.recording = !this.recording
+            this.recording = !this.recording;
         },
     },
     computed: {
@@ -122,7 +152,13 @@ export default {
         },
         recordingColor() {
             return this.recording ? "has-text-danger" : "has-text-white"
-        }
+        },
+        formatElapsedTime() {
+            let minutes = Math.floor(this.time / 60);
+            let seconds = Math.floor(this.time % 60);
+            let milliseconds = Math.floor((this.time % 1) * 100);
+            return `${minutes}:${seconds}:${milliseconds}`;
+        },
     }
 }
 </script>

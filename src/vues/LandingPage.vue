@@ -1,6 +1,6 @@
 <template>
     <div class="landing-container pt-6">
-        <h1 class="title is-1 has-text-centered">Voice commands note taking app</h1>
+        <h1 class="title is-1 has-text-centered has-text-primary">Voice commands note taking app</h1>
 
         <!-- Notes -->
         <section class="section columns">
@@ -28,14 +28,13 @@
         <!-- Voice recording button -->
         <section class="section is-flex is-flex-direction-horizontal is-justify-content-center is-align-items-center">
             <div class="container pr-3" :class="{ 'has-text-right': timer, 'has-text-centered': !timer }">
-                <div class="button is-rounded is-primary">
-                    <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor"
-                        style="cursor: pointer;">
-                        <span class="icon is-size-3" :class="recordingColor">
+                <div class="button is-rounded is-primary" :class="{'waiting-background' : isWaitingBackend}" :style="recordingPointer">
+                    <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor" :style="recordingPointer">
+                        <span class="icon is-size-3" :class="recordingColor" :style="recordingPointer">
                             <!-- <i class="fa-solid fa-microphone"></i> -->
                             <font-awesome-icon :icon="'fa-solid fa-microphone'" />
                         </span>
-                        <span class="is-size-5">
+                        <span class="is-size-5" :style="recordingPointer">
                             {{ recordingText }}
                         </span>
                     </span>
@@ -43,14 +42,10 @@
             </div>
             <p v-if="timer" class="container is-size-5 has-text-left" style="color: aliceblue;">{{ formatElapsedTime }}</p>
         </section>
-        <!-- TODO : add an alert when the answer is note tree is updated -->
-        <!-- TODO : disable button while previous request is being processed -->
-        <div class="modal" :class="{ 'is-active is-clipped': isModalActivated }">
-            <div class="modal-background"></div>
-            <div class="modal-content">
-                <p>Please wait for the processing to finish before recording something else</p>
-            </div>
-            <button @click="isModalActivated = !isModalActivated" class="modal-close is-large" aria-label="close"></button>
+
+        <div v-if="isAlertActivated" class="notification is-primary toggle-alert">
+            <button @click="isAlertActivated = false" class="delete"></button>
+            Request sent ! Wait for the answer to be processed.
         </div>
     </div>
 </template>
@@ -80,8 +75,9 @@ export default {
             recorder: null,
             timer: false,
             time: 0,
+            isRequestSent: false,
             answer_received: false,
-            isModalActivated: false,
+            isAlertActivated: false,
         }
     },
     methods: {
@@ -96,7 +92,7 @@ export default {
             }
         },
         elapsedTime() {
-            this.time += 0.1; // 100 ms
+            this.time += 0.1; // increment by 100 ms
             if (this.timer) {
                 setTimeout(() => {
                     this.elapsedTime();
@@ -104,14 +100,22 @@ export default {
             }
         },
         async toggleRecording() {
+            if (this.isWaitingBackend) {
+                return;
+            }
             if (this.recording) {
                 console.log("Stop recording")
+                this.recording = false;
                 await this.recorder.stopRecording();
                 let audio_b64 = await this.recorder.getDataURL();
 
-                this.answer_received = false;
                 this.toggleTimer();
                 try {
+                    console.log("Sending request to backend")
+                    // NOTE : answer received and isRequestSent seem to be duplicates
+                    this.isRequestSent = true;
+                    this.answer_received = false;
+                    this.isAlertActivated = true;
                     let response = await axios.post(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`,
                         {
                             notes: this.notes_store.allNotes,
@@ -124,6 +128,7 @@ export default {
                         }
                     );
                     // update notes
+                    console.log("Request received");
                     console.log(response);
                     this.notes_store.allNotes = response.data.new_notes;
 
@@ -132,6 +137,7 @@ export default {
                 }
                 this.toggleTimer();
                 this.answer_received = true;
+                this.isRequestSent = false;
 
                 // Delete recorder
                 if (this.recorder) {
@@ -140,29 +146,43 @@ export default {
                 }
             }
             else {
-                if (!this.answer_received && this.timer && !this.isModalActivated) {
-                    this.isModalActivated = true;
-                    return;
-                } else {
-                    console.log("Start recording")
-                    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    this.recorder = new RecordRTCPromisesHandler(stream, {
-                        type: 'audio',
-                        mimeType: 'audio/wav',
-                        recorderType: StereoAudioRecorder,
-                        desiredSampRate: 16000,
-                        numberOfAudioChannels: 1,
-                    });
-                    this.recorder.startRecording();
-                }
-
+                console.log("Start recording")
+                this.recording = true;
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.recorder = new RecordRTCPromisesHandler(stream, {
+                    type: 'audio',
+                    mimeType: 'audio/wav',
+                    recorderType: StereoAudioRecorder,
+                    desiredSampRate: 16000,
+                    numberOfAudioChannels: 1,
+                });
+                this.recorder.startRecording();
             }
-            this.recording = !this.recording;
         },
     },
     computed: {
+        isDisabled() {
+            if (this.isWaitingBackend) {
+                return 1;
+            }
+            return 0;
+        },
+        isWaitingBackend() {
+            return !this.recording && !this.answer_received && this.isRequestSent;
+        },
+        waitingBackground() {
+            return this.isWaitingBackend ? "opacity: 0.5; background-color: #ccc;" : "";
+        },
+        recordingPointer() {
+            return !this.isWaitingBackend ? "cursor: pointer;" : "cursor: not-allowed;";
+        },
         recordingText() {
-            return this.recording ? "Click to stop recording" : "Click to start recording"
+            if (this.isWaitingBackend) {
+                return "Waiting for backend"
+            } else if (this.recording) {
+                return "Click to stop recording"
+            }
+            return "Click to start recording"
         },
         recordingColor() {
             return this.recording ? "has-text-danger" : "has-text-white"
@@ -178,7 +198,15 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-    color: #52b69a;
+.waiting-background {
+    opacity: 0.5;
+    background-color: #ccc;
+}
+.toggle-alert {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 2em;
+    z-index: 100;
 }
 </style>

@@ -1,6 +1,7 @@
 <template>
     <div class="landing-container pt-6">
         <h1 class="title is-1 has-text-centered has-text-primary">Voice commands note taking app</h1>
+        <p class="has-text-centered has-text-white">The requests usually take 30s to be processed</p>
 
         <!-- Notes -->
         <section class="section columns">

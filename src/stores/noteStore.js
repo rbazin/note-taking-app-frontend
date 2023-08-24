@@ -12,14 +12,9 @@ export const noteStore = defineStore("noteStore", {
         },
     }),
     actions: {
-        addNote() {
-            console.log("addNote");
-        },
-        deleteNote() {
-            console.log("deleteNote");
-        },
-        editNote() {
+        editNotes(notes) {
             console.log("editNote");
+            this.allNotes = notes;
         },
         selectNote(note) {
             console.log("selectNote");

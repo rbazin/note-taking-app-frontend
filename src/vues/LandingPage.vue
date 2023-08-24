@@ -163,7 +163,7 @@ export default {
                     if (!response.data.new_notes) {
                         throw new Error("No new notes received");
                     }
-                    this.notes_store.allNotes = response.data.new_notes;
+                    this.notes_store.editNotes(response.data.new_notes);
 
                 } catch (error) {
                     console.log(error);

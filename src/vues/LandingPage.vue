@@ -29,8 +29,10 @@
         <!-- Voice recording button -->
         <section class="section is-flex is-flex-direction-horizontal is-justify-content-center is-align-items-center">
             <div class="container pr-3" :class="{ 'has-text-right': timer, 'has-text-centered': !timer }">
-                <div class="button is-rounded is-primary" :class="{'waiting-background' : isWaitingBackend}" :style="recordingPointer">
-                    <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor" :style="recordingPointer">
+                <div class="button is-rounded is-primary" :class="{ 'waiting-background': isWaitingBackend }"
+                    :style="recordingPointer">
+                    <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor"
+                        :style="recordingPointer">
                         <span class="icon is-size-3" :class="recordingColor" :style="recordingPointer">
                             <!-- <i class="fa-solid fa-microphone"></i> -->
                             <font-awesome-icon :icon="'fa-solid fa-microphone'" />
@@ -44,10 +46,23 @@
             <p v-if="timer" class="container is-size-5 has-text-left" style="color: aliceblue;">{{ formatElapsedTime }}</p>
         </section>
 
-        <div v-if="isAlertActivated" class="notification is-primary toggle-alert">
-            <button @click="isAlertActivated = false" class="delete"></button>
-            Request sent ! Wait for the answer to be processed.
-        </div>
+        <!-- Alerts -->
+
+        <!-- Request sent -->
+        <transition name="slide-in-out">
+            <div v-if="isAlertActivated" class="notification is-primary toggle-alert">
+                <button @click="isAlertActivated = false" class="delete"></button>
+                Request sent ! Wait for the answer to be processed.
+            </div>
+        </transition>
+
+        <!-- Error -->
+        <transition name="slide-in-out">
+            <div v-if="isErrorActivated" class="notification is-danger toggle-alert">
+                <button @click="isErrorActivated = false" class="delete"></button>
+                An error occured. Please try again or reload the page.
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -79,6 +94,7 @@ export default {
             isRequestSent: false,
             answer_received: false,
             isAlertActivated: false,
+            isErrorActivated: false,
         }
     },
     methods: {
@@ -100,6 +116,20 @@ export default {
                 }, 100)
             }
         },
+        toggleAlertActivated() {
+            this.isAlertActivated = true;
+            setTimeout(() => {
+                this.isAlertActivated = false;
+            }, 5000)
+
+        },
+        toggleError() {
+            this.isErrorActivated = true;
+            setTimeout(() => {
+                this.isErrorActivated = false;
+            }, 5000)
+
+        },
         async toggleRecording() {
             if (this.isWaitingBackend) {
                 return;
@@ -113,10 +143,10 @@ export default {
                 this.toggleTimer();
                 try {
                     console.log("Sending request to backend")
-                    // NOTE : answer received and isRequestSent seem to be duplicates
+
                     this.isRequestSent = true;
                     this.answer_received = false;
-                    this.isAlertActivated = true;
+                    this.toggleAlertActivated();
                     let response = await axios.post(`${process.env.VUE_APP_BACKEND_API_HOST}:${process.env.VUE_APP_BACKEND_API_PORT}/transcribe`,
                         {
                             notes: this.notes_store.allNotes,
@@ -130,11 +160,14 @@ export default {
                     );
                     // update notes
                     console.log("Request received");
-                    console.log(response);
+                    if (!response.data.new_notes) {
+                        throw new Error("No new notes received");
+                    }
                     this.notes_store.allNotes = response.data.new_notes;
 
                 } catch (error) {
                     console.log(error);
+                    this.toggleError();
                 }
                 this.toggleTimer();
                 this.answer_received = true;
@@ -203,11 +236,30 @@ export default {
     opacity: 0.5;
     background-color: #ccc;
 }
+
 .toggle-alert {
     position: absolute;
     left: 50%;
+    top: 2rem;
     transform: translateX(-50%);
-    top: 2em;
     z-index: 100;
+}
+.slide-in-out-enter-from {
+    transform: translateY(-100px) translateX(-50%);
+}
+.slide-in-out-enter-to {
+    transform: translateY(0) translateX(-50%);
+}
+.slide-in-out-enter-active {
+    transition: all 0.5s ease; 
+}
+.slide-in-out-leave-from {
+    transform: translateY(0) translateX(-50%);
+}
+.slide-in-out-leave-to {
+    transform: translateY(-100px) translateX(-50%);
+}
+.slide-in-out-leave-active {
+    transition: all 0.5s ease; 
 }
 </style>

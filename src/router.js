@@ -2,7 +2,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 
-import LandingPage from './vues/LandingPage.vue'
+import LandingPage from './pages/LandingPage.vue'
 
 const routes = [
     {

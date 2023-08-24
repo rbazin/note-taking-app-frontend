@@ -5,69 +5,32 @@
 
         <!-- Notes -->
         <section class="section columns">
-            <!-- List of notes -->
-            <div class="container column is-one-third is-flex is-flex-direction-horizontal is-justify-content-center">
-                <div id="box" class="box has-text-centered px-6">
-                    <h2 class="title is-2">Notes</h2>
-                    <p>Here are all your notes:</p>
-                    <div class="is-flex is-flex-direction-horizontal is-justify-content-center">
-                        <item-component class="pt-2" :folder="notes_store.allNotes" />
-                    </div>
-                </div>
-            </div>
-            <!-- Note selected -->
-            <div class="container is-two-third column">
-                <div id="box" class="box has-text-centered px-6">
-                    <h2 v-if="!notes_store.noteSelected" class="title is-2">Note</h2>
-                    <h2 v-else class="title is-2">{{ notes_store.noteSelected.name }}</h2>
-                    <p v-if="!notes_store.noteSelected">No note selected</p>
-                    <p v-else class="has-text-left">{{ notes_store.noteSelected.text }}</p>
-                </div>
-            </div>
+            <notes-list />
+            <note-selected />
         </section>
 
         <!-- Voice recording button -->
         <section class="section is-flex is-flex-direction-horizontal is-justify-content-center is-align-items-center">
-            <div class="container pr-3" :class="{ 'has-text-right': timer, 'has-text-centered': !timer }">
-                <div class="button is-rounded is-primary" :class="{ 'waiting-background': isWaitingBackend }"
-                    :style="recordingPointer">
-                    <span @click="toggleRecording" class="icon-text is-align-items-center" :class="recordingColor"
-                        :style="recordingPointer">
-                        <span class="icon is-size-3" :class="recordingColor" :style="recordingPointer">
-                            <!-- <i class="fa-solid fa-microphone"></i> -->
-                            <font-awesome-icon :icon="'fa-solid fa-microphone'" />
-                        </span>
-                        <span class="is-size-5" :style="recordingPointer">
-                            {{ recordingText }}
-                        </span>
-                    </span>
-                </div>
-            </div>
-            <p v-if="timer" class="container is-size-5 has-text-left" style="color: aliceblue;">{{ formatElapsedTime }}</p>
+            <recording-button @recordingEvent="toggleRecording" :recordingPointer="recordingPointer" :timer="timer"
+                :recordingText="recordingText" :recordingColor="recordingColor" :isWaitingBackend="isWaitingBackend"
+                :formatElapsedTime="formatElapsedTime" />
         </section>
 
         <!-- Alerts -->
 
-        <!-- Request sent -->
-        <transition name="slide-in-out">
-            <div v-if="isAlertActivated" class="notification is-primary toggle-alert">
-                <button @click="isAlertActivated = false" class="delete"></button>
-                Request sent ! Wait for the answer to be processed.
-            </div>
-        </transition>
+        <!-- Request sent Info -->
+        <alert-slider :isAlertActivated="isAlertActivated" :type="'info'" @alertEvent="isAlertActivated = false" />
 
-        <!-- Error -->
-        <transition name="slide-in-out">
-            <div v-if="isErrorActivated" class="notification is-danger toggle-alert">
-                <button @click="isErrorActivated = false" class="delete"></button>
-                An error occured. Please try again or reload the page.
-            </div>
-        </transition>
+        <!-- Error Info -->
+        <alert-slider :isAlertActivated="isErrorActivated" :type="'error'" @errorEvent="isErrorActivated = false" />
     </div>
 </template>
 
 <script>
-import ItemComponent from '@/components/ItemComponent.vue'
+import NotesList from '@/components/NotesList.vue'
+import NoteSelected from '@/components/NoteSelected.vue'
+import RecordingButton from '@/components/RecordingButton.vue'
+import AlertSlider from '@/components/AlertSlider.vue'
 import { noteStore } from '@/stores/noteStore'
 import { RecordRTCPromisesHandler, StereoAudioRecorder } from 'recordrtc'
 
@@ -76,7 +39,10 @@ import axios from 'axios'
 export default {
     name: 'LandingPage',
     components: {
-        ItemComponent
+        NotesList,
+        NoteSelected,
+        RecordingButton,
+        AlertSlider,
     },
     setup() {
         const notes_store = noteStore()
@@ -231,35 +197,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.waiting-background {
-    opacity: 0.5;
-    background-color: #ccc;
-}
-
-.toggle-alert {
-    position: absolute;
-    left: 50%;
-    top: 2rem;
-    transform: translateX(-50%);
-    z-index: 100;
-}
-.slide-in-out-enter-from {
-    transform: translateY(-100px) translateX(-50%);
-}
-.slide-in-out-enter-to {
-    transform: translateY(0) translateX(-50%);
-}
-.slide-in-out-enter-active {
-    transition: all 0.5s ease; 
-}
-.slide-in-out-leave-from {
-    transform: translateY(0) translateX(-50%);
-}
-.slide-in-out-leave-to {
-    transform: translateY(-100px) translateX(-50%);
-}
-.slide-in-out-leave-active {
-    transition: all 0.5s ease; 
-}
-</style>
+<style scoped></style>

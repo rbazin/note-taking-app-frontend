@@ -1,6 +1,6 @@
 # Note taking app frontend
 
-Frontend part of the Natural Voice Commands note-taking application for the Visually Impaired. Intended as a final graduate project for the Human Computer Interaction course at McGill University. 
+Frontend part of the Natural Voice Commands note-taking application for the Visually Impaired. Intended as a final graduate project for the Human Computer Interaction course at McGill University. Find backend [here](https://github.com/rbazin/note-taking-app-backend). 
 
 ## Project setup
 ```
